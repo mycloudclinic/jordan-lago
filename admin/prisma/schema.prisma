@@ -1,0 +1,126 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Project {
+  id               Int      @id @default(autoincrement())
+  uid              String   @unique // URL slug
+  name             String
+  client           String
+  date             DateTime
+  shortDescription String
+  description      String   @default("")
+  country          String
+  city             String
+  published        Boolean  @default(false)
+  featured         Boolean  @default(false)
+  order            Int      @default(0)
+  
+  // Main media (cover)
+  mainMediaType    String   // 'image' | 'video'
+  mainMediaUrl     String   // Cloudinary URL
+  mainVideoUrl     String?  // Full video URL if main is video
+  
+  // Categories (many-to-many)
+  categories       ProjectCategory[]
+  
+  // Additional media content
+  mediaBlocks      MediaBlock[]
+  
+  // Team members
+  teamMembers      TeamMember[]
+  
+  // SEO
+  seoTitle         String?
+  seoDescription   String?
+  seoKeywords      String?
+  seoImage         String?
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  @@map("projects")
+}
+
+model Category {
+  id       Int    @id @default(autoincrement())
+  name     String @unique
+  type     String @unique
+  color    String @default("#6366f1")
+  
+  projects ProjectCategory[]
+  
+  @@map("categories")
+}
+
+model ProjectCategory {
+  projectId  Int
+  categoryId Int
+  
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  
+  @@id([projectId, categoryId])
+  @@map("project_categories")
+}
+
+model MediaBlock {
+  id          Int     @id @default(autoincrement())
+  projectId   Int
+  type        String  // 'full-size', 'two-media', 'three-media'
+  order       Int     @default(0)
+  
+  // Media content
+  leftMediaUrl    String?
+  leftMediaType   String? // 'image' | 'video'
+  rightMediaUrl   String?
+  rightMediaType  String?
+  middleMediaUrl  String?
+  middleMediaType String?
+  
+  // Captions
+  leftCaption     String?
+  rightCaption    String?
+  middleCaption   String?
+  
+  project     Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  @@map("media_blocks")
+}
+
+model TeamMember {
+  id        Int     @id @default(autoincrement())
+  projectId Int
+  name      String
+  position  String
+  
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  @@map("team_members")
+}
+
+model Client {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  logoUrl     String?  // Cloudinary URL for client logo
+  website     String?
+  description String?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("clients")
+}
+
+model Settings {
+  id    Int    @id @default(autoincrement())
+  key   String @unique
+  value String
+  
+  @@map("settings")
+}
