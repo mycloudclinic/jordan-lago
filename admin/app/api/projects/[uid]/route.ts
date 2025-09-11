@@ -1,13 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
 
-const db = new PrismaClient({
-  datasources: {
-    db: {
-      url: "file:./admin.db"
-    }
-  }
-})
+const db = new PrismaClient()
 
 export async function GET(
   request: NextRequest,

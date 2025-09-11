@@ -6,14 +6,7 @@ import path from 'path'
 /**
  * Generate static site files from current database
  */
-// Ensure DB URL exists for this route execution context
-if (!process.env.DATABASE_URL) {
-  process.env.DATABASE_URL = 'file:./admin.db'
-}
-
-const prisma = new PrismaClient({
-  datasources: { db: { url: process.env.DATABASE_URL } }
-})
+const prisma = new PrismaClient()
 
 export async function POST(request: NextRequest) {
   try {

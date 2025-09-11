@@ -45,7 +45,10 @@ async function setup() {
     const envPath = path.join(__dirname, '../.env.local')
     if (!await fs.pathExists(envPath)) {
       console.log('⚠️  .env.local not found. Creating template...')
-      const envTemplate = `# Cloudinary (public)
+      const envTemplate = `# Database (Neon PostgreSQL)
+DATABASE_URL="postgresql://username:password@hostname/database?sslmode=require"
+
+# Cloudinary (public)
 NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME="YOUR_CLOUD_NAME"
 NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET="YOUR_UNSIGNED_PRESET"
 
@@ -62,7 +65,6 @@ ASSETS_PATH="../d2csodhem33bqt.cloudfront.net/uploads"
 # Admin app
 NEXTAUTH_SECRET="lo2s-admin-secret-2024"
 NEXTAUTH_URL="http://localhost:3001"
-DATABASE_URL="file:./admin.db"
 `
       await fs.writeFile(envPath, envTemplate)
       console.log('✅ Created .env.local template')
