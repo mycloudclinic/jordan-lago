@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
-
-const db = new PrismaClient()
+import { db } from '@/lib/database'
 
 export async function GET(
   request: NextRequest,
@@ -16,6 +14,11 @@ export async function GET(
         categories: {
           include: {
             category: true
+          }
+        },
+        mediaBlocks: {
+          orderBy: {
+            order: 'asc'
           }
         }
       }
@@ -64,6 +67,8 @@ export async function PUT(
     console.log('📝 Request body:', body)
     
     const {
+      previousUid,
+      uid,
       name,
       client,
       date,
@@ -74,19 +79,24 @@ export async function PUT(
       categories,
       mainMediaType,
       mainMediaUrl,
-      mainVideoUrl
+      mainVideoUrl,
+      mediaBlocks,
+      published
     } = body
 
+    const sourceUid = previousUid || params.uid
+    const targetUid = uid || params.uid
+    
     // Find or create the project
     let project = await db.project.findUnique({
-      where: { uid: params.uid }
+      where: { uid: sourceUid }
     })
 
     if (!project) {
       // Create new project if it doesn't exist
       project = await db.project.create({
         data: {
-          uid: params.uid,
+          uid: targetUid,
           name: name ?? params.uid,
           client: client ?? '',
           date: date ? new Date(date) : new Date(),
@@ -103,6 +113,7 @@ export async function PUT(
     } else {
       // Update existing project
       const updateData: any = {}
+      if (targetUid && targetUid !== sourceUid) updateData.uid = targetUid
       if (name !== undefined) updateData.name = name
       if (client !== undefined) updateData.client = client
       if (date !== undefined) {
@@ -116,9 +127,10 @@ export async function PUT(
       if (mainMediaType !== undefined) updateData.mainMediaType = mainMediaType || 'video'
       if (mainMediaUrl !== undefined) updateData.mainMediaUrl = mainMediaUrl || ''
       if (mainVideoUrl !== undefined) updateData.mainVideoUrl = mainVideoUrl || ''
+      if (published !== undefined) updateData.published = published
 
       project = await db.project.update({
-        where: { uid: params.uid },
+        where: { uid: sourceUid },
         data: updateData
       })
     }
@@ -155,7 +167,54 @@ export async function PUT(
       }
     }
 
+    // Update media blocks
+    if (mediaBlocks && Array.isArray(mediaBlocks)) {
+      // Remove existing media blocks
+      await db.mediaBlock.deleteMany({
+        where: { projectId: project.id }
+      })
+
+      // Add new media blocks
+      for (let i = 0; i < mediaBlocks.length; i++) {
+        const block = mediaBlocks[i]
+        await db.mediaBlock.create({
+          data: {
+            projectId: project.id,
+            type: block.type || 'gallery',
+            order: block.order || i,
+            leftMediaUrl: block.leftMediaUrl || null,
+            leftMediaType: block.leftMediaType || null,
+            rightMediaUrl: block.rightMediaUrl || null,
+            rightMediaType: block.rightMediaType || null,
+            middleMediaUrl: block.middleMediaUrl || null,
+            middleMediaType: block.middleMediaType || null,
+            leftCaption: block.leftCaption || null,
+            rightCaption: block.rightCaption || null,
+            middleCaption: block.middleCaption || null
+          }
+        })
+      }
+    }
+
     console.log('✅ Project saved successfully:', project)
+
+    // Trigger static site regeneration
+    try {
+      console.log('🔄 Triggering static site regeneration...')
+      const generateResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3001'}/api/generate-site`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ previousUid: sourceUid, uid: targetUid })
+      })
+      
+      if (generateResponse.ok) {
+        console.log('✅ Static site regenerated successfully')
+      } else {
+        console.warn('⚠️ Static site regeneration failed')
+      }
+    } catch (error) {
+      console.warn('⚠️ Error triggering static site regeneration:', error)
+    }
     
     return NextResponse.json({ 
       success: true, 

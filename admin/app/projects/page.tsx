@@ -1,36 +1,33 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+
+const PREVIEW_BASE = process.env.NEXT_PUBLIC_PREVIEW_URL || 'http://localhost:8000'
+
 export default function ProjectsPage() {
-  const mockProjects = [
-    {
-      uid: 'shkoon-msrahiya-album-tour',
-      name: 'Shkoon | Msrahiya Album Tour',
-      client: 'Meiosis',
-      date: '2023-12-01',
-      shortDescription: 'Msrahiya Album Tour',
-      location: { country: 'Tour', city: 'World' },
-      categories: ['Content Development', 'Digital Art and Visuals', 'Creative Direction'],
-      mediaType: 'video'
-    },
-    {
-      uid: 'hozho_2',
-      name: 'Hozho II',
-      client: 'Desert Sound', 
-      date: '2024-10-04',
-      shortDescription: 'Hozho, Dish Dash, Misha Saied, Leigh Ross, Midway',
-      location: { country: 'Saudi Arabia', city: 'Riyadh' },
-      categories: ['Digital Art and Visuals'],
-      mediaType: 'video'
-    },
-    {
-      uid: 'bulgari-campaign-shoot',
-      name: 'Bulgari',
-      client: 'Bulgari',
-      date: '2024-09-09', 
-      shortDescription: 'Projection Mapping for Bulgari\'s New Campaign',
-      location: { country: 'Saudi Arabia', city: 'Riyadh' },
-      categories: ['3D Mapping', 'Digital Art and Visuals', 'Creative Direction'],
-      mediaType: 'video'
-    },
-  ]
+  const [projects, setProjects] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  // Load projects from API
+  useEffect(() => {
+    const loadProjects = async () => {
+      try {
+        const response = await fetch('/api/projects')
+        if (response.ok) {
+          const data = await response.json()
+          setProjects(data.projects || [])
+        } else {
+          console.error('Failed to load projects')
+        }
+      } catch (error) {
+        console.error('Error loading projects:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadProjects()
+  }, [])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
@@ -61,78 +58,131 @@ export default function ProjectsPage() {
 
         {/* Projects Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {mockProjects.map((project, index) => (
-            <div
-              key={project.uid}
-              className="group bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden hover:bg-black/50 hover:border-white/20 transition-all duration-300 transform hover:-translate-y-2"
-            >
-              {/* Project Thumbnail */}
-              <div className="relative aspect-video bg-gradient-to-br from-gray-700 to-gray-900">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center">
-                    {project.mediaType === 'video' ? (
-                      <div className="w-8 h-8 text-white text-center">🎬</div>
+          {isLoading ? (
+            // Loading skeleton
+            Array.from({ length: 6 }).map((_, index) => (
+              <div key={index} className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden animate-pulse">
+                <div className="aspect-video bg-gray-700"></div>
+                <div className="p-6 space-y-3">
+                  <div className="h-4 bg-gray-700 rounded w-3/4"></div>
+                  <div className="h-3 bg-gray-700 rounded w-1/2"></div>
+                  <div className="h-3 bg-gray-700 rounded w-2/3"></div>
+                </div>
+              </div>
+            ))
+          ) : projects.length === 0 ? (
+            <div className="col-span-full text-center py-12">
+              <div className="text-white/60 mb-4">No projects found</div>
+              <a href="/projects/new" className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
+                Create First Project
+              </a>
+            </div>
+          ) : (
+            projects.map((project, index) => (
+              <div
+                key={project.uid}
+                className="group bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden hover:bg-black/50 hover:border-white/20 transition-all duration-300 transform hover:-translate-y-2"
+              >
+                {/* Project Thumbnail */}
+                <div className="relative aspect-video bg-gradient-to-br from-gray-700 to-gray-900 overflow-hidden">
+                  {project.mainMediaUrl ? (
+                    project.mainMediaType === 'video' ? (
+                      <video 
+                        src={project.mainMediaUrl} 
+                        className="w-full h-full object-cover"
+                        muted 
+                        loop 
+                        playsInline
+                        preload="metadata"
+                      />
                     ) : (
-                      <div className="w-8 h-8 text-white text-center">🖼️</div>
+                      <img 
+                        src={project.mainMediaUrl} 
+                        alt={project.name}
+                        className="w-full h-full object-cover"
+                      />
+                    )
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center">
+                        {project.mainMediaType === 'video' ? (
+                          <div className="w-8 h-8 text-white text-center">🎬</div>
+                        ) : (
+                          <div className="w-8 h-8 text-white text-center">🖼️</div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Action Buttons */}
+                  <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                    <div className="flex space-x-2">
+                      <a href={`/projects/${project.uid}/edit`} className="p-2 bg-black/60 backdrop-blur-sm rounded-lg hover:bg-black/80 transition-colors">
+                        ✏️
+                      </a>
+                      <a href={`${PREVIEW_BASE}/work/${project.uid}.html`} target="_blank" className="p-2 bg-black/60 backdrop-blur-sm rounded-lg hover:bg-black/80 transition-colors">
+                        👁️
+                      </a>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Project Info */}
+                <div className="p-6">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-white mb-1">
+                        {project.name}
+                      </h3>
+                      <p className="text-sm text-gray-400 mb-2">{project.client}</p>
+                    </div>
+                    <button className="p-1 hover:bg-white/10 rounded-lg transition-colors">
+                      ⋯
+                    </button>
+                  </div>
+                  
+                  <p className="text-sm text-gray-300 mb-4">
+                    {project.shortDescription}
+                  </p>
+                  
+                  <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
+                    <span>{project.city}, {project.country}</span>
+                    <span>{new Date(project.date).toLocaleDateString()}</span>
+                  </div>
+                  
+                  {/* Categories */}
+                  <div className="flex flex-wrap gap-1 mb-4">
+                    {project.categories && project.categories.slice(0, 2).map((category: any, catIndex: number) => (
+                      <span
+                        key={catIndex}
+                        className="px-2 py-1 bg-white/10 text-white text-xs rounded-lg"
+                      >
+                        {typeof category === 'string' ? category : category.name}
+                      </span>
+                    ))}
+                    {project.categories && project.categories.length > 2 && (
+                      <span className="px-2 py-1 bg-white/10 text-white text-xs rounded-lg">
+                        +{project.categories.length - 2}
+                      </span>
                     )}
                   </div>
-                </div>
-                
-                {/* Action Buttons */}
-                <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <div className="flex space-x-2">
-                    <a href={`/projects/${project.uid}/edit`} className="p-2 bg-black/60 backdrop-blur-sm rounded-lg hover:bg-black/80 transition-colors">
-                      ✏️
-                    </a>
-                    <a href={`http://localhost:8002/work/${project.uid}.html`} target="_blank" className="p-2 bg-black/60 backdrop-blur-sm rounded-lg hover:bg-black/80 transition-colors">
-                      👁️
-                    </a>
-                  </div>
-                </div>
-              </div>
 
-              {/* Project Info */}
-              <div className="p-6">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-white mb-1">
-                      {project.name}
-                    </h3>
-                    <p className="text-sm text-gray-400 mb-2">{project.client}</p>
+                  {/* Status */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <div className={`w-2 h-2 rounded-full ${project.published ? 'bg-green-400' : 'bg-yellow-400'}`}></div>
+                      <span className="text-xs text-white/60">
+                        {project.published ? 'Published' : 'Draft'}
+                      </span>
+                    </div>
+                    <div className="text-xs text-white/40">
+                      #{index + 1}
+                    </div>
                   </div>
-                  <button className="p-1 hover:bg-white/10 rounded-lg transition-colors">
-                    ⋯
-                  </button>
-                </div>
-                
-                <p className="text-sm text-gray-300 mb-4">
-                  {project.shortDescription}
-                </p>
-                
-                <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
-                  <span>{project.location.city}, {project.location.country}</span>
-                  <span>{new Date(project.date).toLocaleDateString()}</span>
-                </div>
-                
-                {/* Categories */}
-                <div className="flex flex-wrap gap-1">
-                  {project.categories.slice(0, 2).map((category) => (
-                    <span
-                      key={category}
-                      className="px-2 py-1 bg-white/10 text-white text-xs rounded-lg"
-                    >
-                      {category}
-                    </span>
-                  ))}
-                  {project.categories.length > 2 && (
-                    <span className="px-2 py-1 bg-white/10 text-white text-xs rounded-lg">
-                      +{project.categories.length - 2}
-                    </span>
-                  )}
                 </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
 
         {/* Add New Project Card */}

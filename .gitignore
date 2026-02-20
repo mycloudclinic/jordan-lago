@@ -52,6 +52,17 @@ Thumbs.db
 *.tmp
 *.temp
 
-# HTTrack cache
+# HTTrack cache and artifacts
 hts-cache/
 hts-log.txt
+httrack_complete/
+httrack_shkoon/
+
+# Backup files created by the CMS static generator
+*.bak
+*.bak.*
+*.backup
+*.prev
+
+# Old LO2S mirrored subdirectory
+jordanlago.com/
