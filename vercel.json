@@ -1,0 +1,22 @@
+{
+  "buildCommand": null,
+  "outputDirectory": ".",
+  "framework": null,
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "rewrites": [
+    { "source": "/work/:slug", "destination": "/work/:slug.html" }
+  ],
+  "redirects": [
+    { "source": "/lo2s.com/:path*", "destination": "/:path*", "statusCode": 301 },
+    { "source": "/jordanlago.com/:path*", "destination": "/:path*", "statusCode": 301 }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" }
+      ]
+    }
+  ]
+}

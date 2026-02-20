@@ -1,0 +1,13 @@
+admin/
+httrack_complete/
+httrack_shkoon/
+lo2s.com/
+jordanlago.com/
+*.bak
+*.bak.*
+*.backup
+*.prev
+*.py
+*.mov
+node_modules/
+.git/
